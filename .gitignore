@@ -1,0 +1,12 @@
+Audio/
+tmp/
+rttm/
+env/
+__pycache__/
+pytorch_xvectors/
+Speacker-Diarization/
+'статьи для 1 и 2 главы'/
+.ip*/
+pyBK/audio/
+try.ipynb
+pyAudioAnalysis/pyAudioAnalysis/Test.ipynb
