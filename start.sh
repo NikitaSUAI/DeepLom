@@ -1,6 +1,6 @@
 cde .
 echo "Start"
-echo "Make noise"
+#echo "Make noise"
 #for audio in Audio/*; do
 #	python3 make_noise.py $audio 	
 #	python3 make_noise.py $audio 10
@@ -13,8 +13,25 @@ echo "Make noise"
 #	python3 change_duration.py $audio 3
 #done
 
-echo "preprocessing done"
-cde -e
+#echo "preprocessing done"
+#cde -e
+
+#--pyBK-------------------------->
+echo "pyBK"
+#cp Audio/* pyBK/audio/
+
+cde pyBK
+python3 main.py
+cde ..
+
+#--pyAudioAnalysis--------------->
+#echo "pyAudioAnalysis"
+#cde pyAudioAnalysis
+#for audio in ../Audio/*;do
+#	echo "pyAudioAnalysis on $audio"
+#	python3 main.py $audio MixHeadset.test.rttm
+#done;
+#cde ..
 
 #--pyannote audio---------------->
 #echo "pyannote-audio"
@@ -26,21 +43,6 @@ cde -e
 #done
 #cde ..
 
-#--pyBK-------------------------->
-#echo "pyBK"
-#cp Audio/* pyBK/audio/
 
-#cde pyBK
-#python3 main.py
-#cde ..
-
-#--pyAudioAnalysis--------------->
-echo "pyAudioAnalysis"
-cde pyAudioAnalysis
-for audio in ../Audio/*;do
-	echo "pyAudioAnalysis on $audio"
-	python3 main.py $audio MixHeadset.test.rttm
-done;
-cde ..
 cde -e
 echo "done"

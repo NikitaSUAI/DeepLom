@@ -9,13 +9,14 @@ import numpy as np
 import os
 import sys
 import re
+import time
 
 
 def remove_wav(label):
     label = re.search("[a-zA-Z0-9-._]+.wav", label).group(0)
     print(label)
-    label = re.sub("[0-9]+lvl_esion_", "", label[::-1])
-    label =  re.sub("vaw.", "", label)[::-1]
+    #label = re.sub("[0-9]+lvl_esion_", "", label[::-1])
+    label =  re.sub(".wav", "", label)
     
     print(label)
     return label
@@ -30,14 +31,14 @@ if __name__ == "__main__":
         raise BaseException("Karamba")
         
     f_name = sys.argv[-2]
-    appended = ""
-    if "noise" in f_name:
-        appended = "_noise_lvl1"
     label = remove_wav(f_name)
-    truth = get_truth(label, sys.argv[-1])
+    truth = get_truth(re.sub("_noise_lvl[0-9]+", "", label), sys.argv[-1])
+    start_time = time.time()
     predict = speaker_diarization(f_name, truth, lda_dim= 0)
-    
-    with open(os.path.join("out", f"{label}{appended}.rttm"), "w") as f:
+    duration_time = time.time() - start_time
+    with open("out.dur","a") as f:
+        f.write(f"{label}\t{duration_time}\n")
+    with open(os.path.join("out", f"{label}.rttm"), "w") as f:
         util.to_rttm(predict, label).write_rttm(f)
     
     

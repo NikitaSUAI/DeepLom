@@ -1,7 +1,8 @@
 import os
 import sys
 import torch
-from time import perf_counter
+import time
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -12,12 +13,14 @@ if __name__ == "__main__":
         "audio":sys.argv[1]
     }
     print("start diarization via pyannote.audio")
-    start = perf_counter()
+    start = time.time()
     result = dia_pipline(file_info)
     output_filename = os.path.join(os.getcwd(), "out", ".".join((file_info["uri"], "rttm")))
     with open(output_filename, "w") as f:
         result.write_rttm(f)
-    duration = perf_counter() - start
+    duration = time.time() - start
+    with open("out/out.dur", "a") as f:
+        f.write(f"{file_info}\t{duration}")
     print("diarization via pyannote audio ended with time " + str(duration))
 
 

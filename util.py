@@ -4,6 +4,7 @@ from pyannote.database.util import load_rttm
 
 import numpy as np
 import pandas as pd
+import librosa
 
 import os
 import re
@@ -34,8 +35,9 @@ def shrink(annote, coef):
     res = res.from_json(tmp)
     return res
 
-def stat(test, uns, normalize_name_func=lambda x:x):
-    stat = pd.DataFrame(columns=["file", "DER", "JER", "FA", "Missed", "counted person", "person"])
+def stat(test, uns, dur_path, normalize_name_func=lambda x:x):
+    dur = get_duration_list(dur_path)
+    stat = pd.DataFrame(columns=["file", "DER", "JER", "FA", "Missed", "counted person", "person", "process_duration", "audio_duration"])
     for key, val in test.items():
         real = len(pd.DataFrame(uns[normalize_name_func(key)].for_json()["content"])["label"].unique())
         finded = len(pd.DataFrame(val.for_json()["content"])["label"].unique())
@@ -47,9 +49,47 @@ def stat(test, uns, normalize_name_func=lambda x:x):
                             "FA":der["false alarm"],
                             "Missed":der["missed detection"],
                             "counted person":finded, 
-                            "person":real}, ignore_index=True)
-    stat = stat.append({"file":"--ALL--", "DER":stat["DER"].mean()}, ignore_index=True)
+                            "person":real,
+                            "process_duration":sec_to_min(dur[key][0]),
+                            "audio_duration":sec_to_min(dur[key][-1]),
+                            "cost of process":dur[key][0]/dur[key][-1]
+                           }, ignore_index=True)
+    stat = stat.append({"file":"--ALL--",
+                        "DER":stat["DER"].mean(), 
+                        "JER":stat["JER"].mean(), 
+                        "FA":stat["FA"].mean(), 
+                        "Missed":stat["Missed"].mean(), 
+                        "cost of process":stat["cost of process"].mean()}, ignore_index=True)
     return stat
+ 
+sec_to_min = lambda x: x/60
+    
+def get_duration_list(path):
+    res = dict()
+    with open(path) as f:
+        for line in f:
+            key, val = line.split("\t")
+            res[key] = [float(re.sub("\n", "", val)), ]
+            try:
+                res[key].append(list_dur[key])
+            except KeyError as e:
+                print(e)
+    return res
+
+def tmp():
+    res = dict()
+    for i  in os.listdir("./Audio"):
+        wav, sr = librosa.load(f"./Audio/{i}")
+        res[re.sub(".wav", "", i)] = len(wav)/sr
+    return res
+
+list_dur = tmp()
+
+
+
+if __name__ == "__main__":
+    import sys
+    print(get_duration_list(sys.argv[-1]))
 
 
 def get_rttms(out_path):
