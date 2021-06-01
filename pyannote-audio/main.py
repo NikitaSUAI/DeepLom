@@ -1,10 +1,14 @@
 import os
+import re
 import sys
-import torch
 import time
+from ipcqueue import posixmq
+
+import torch
 
 
-if __name__ == "__main__":
+
+def alon():
     if len(sys.argv) != 2:
         raise BaseException("Karamba")
     dia_pipline = torch.hub.load('pyannote/pyannote-audio', 'dia_ami')
@@ -22,6 +26,38 @@ if __name__ == "__main__":
     with open("out/out.dur", "a") as f:
         f.write(f"{file_info}\t{duration}")
     print("diarization via pyannote audio ended with time " + str(duration))
+
+def on_service():
+    q_name = "/pyanno"
+    if len(sys.argv) >= 3 and sys.argv[2] != "&":
+        q_name = sys.argv[2]
+    dia_pipline = torch.hub.load('pyannote/pyannote-audio', 'dia_ami')
+
+    front_q = posixmq.Queue(q_name)
+    bask_q = posixmq.Queue(f"{q_name}_return")
+    while True:
+        msg = front_q.get()
+        if msg == "break":
+            break
+        print("Processing")
+        file_info = {
+            "uri": ".".join(msg.split("/")[-1].split(".")[:-1]),
+            "audio": msg
+        }
+        out = re.sub(".wav", ".rttm", msg)
+        result = dia_pipline(file_info)
+        with open(out, "w") as f:
+            result.write_rttm(f)
+        bask_q.put(out)
+
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "service":
+        on_service()
+    else:
+        alon()
+
 
 
 

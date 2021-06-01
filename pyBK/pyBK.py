@@ -8,6 +8,7 @@ import configparser
 from diarizationFunctions import *
 import numpy as np
 
+from ipcqueue import posixmq
 import time
 
 
@@ -101,7 +102,7 @@ def runDiarization(showName,config):
         f.write(f"{showName}\t{duration_time}\n")
     print('\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
 
-def main():
+def alon():
 
     configFile = 'config.ini'    
     config = configparser.ConfigParser()
@@ -126,3 +127,25 @@ def main():
     for idx,showName in enumerate(showNameList):
         print('\nProcessing file',idx+1,'/',len(showNameList))
         runDiarization(os.path.splitext(os.path.basename(showName))[0],config)
+
+def as_service():
+    q_name = "/pybk"
+    if len(sys.argv) >= 3 and sys.argv[2] != "&":
+        q_name = sys.argv[2]
+    configFile = 'config.ini'
+    config = configparser.ConfigParser()
+    config.read(configFile)
+    front_q = posixmq.Queue(q_name)
+    back_q = posixmq.Queue(f"{q_name}_return")
+    while True:
+        msg = front_q.get()
+        if msg == "break":
+            break
+        print("Processing")
+        label = ".".join(msg.split("/")[-1].split(".")[:-1])
+        config['PATH']['audio'] = msg.split(label)[0]
+        config['EXPERIMENT']['name'] = label
+        config['PATH']['output'] = config['PATH']['audio']
+        runDiarization(label, config)
+        out = f"{config['PATH']['output']}{label}{config['EXTENSION']['output']}"
+        back_q.put(out)
