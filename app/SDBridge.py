@@ -1,6 +1,6 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from enum import IntEnum
-from threading import Thread, Lock
+from threading import Lock
 from collections.abc import Callable
 
 from ipcqueue import posixmq
@@ -20,7 +20,8 @@ class SDBridge:
                   posixmq.Queue(f"{pyBK_q}_return"),
                   posixmq.Queue(pyAudio_q),
                   posixmq.Queue(f"{pyAudio_q}_return")]
-        self.TPE = ThreadPoolExecutor(max_workers=5)
+        self.TPE = ThreadPoolExecutor(max_workers=1)
+        # self.Lock = Lock()
 
     def go(self, file_name:str, algo_type:Algo,
            callback_fn):
@@ -33,3 +34,13 @@ class SDBridge:
         result = back_q.get()
         callback_fn(result)
 
+
+    def close_q(self):
+        # опустошаем очередь
+        for i in self.queues:
+            while i.qsize() > 0:
+                i.get()
+        # закрываем сервисы
+        for i in range(3):
+            self.queues[i*2].put("break")
+        print("All closed")
